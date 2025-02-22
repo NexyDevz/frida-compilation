@@ -1,0 +1,50 @@
+name: Build and Package Frida
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Set up dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential clang cmake python3 python3-pip git valac libssl-dev libsoup2.4-dev
+
+      - name: Clone Frida repository
+        run: |
+          git clone https://github.com/frida/frida.git
+          cd frida
+
+      - name: Build Frida for ARM64
+        run: |
+          cd frida
+          make clean
+          make
+          sudo make install
+
+      - name: Create tarball of Frida
+        run: |
+          cd /home/runner/frida
+          tar -czvf frida-arm64.tar.gz .
+
+      - name: Upload Frida package as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: frida-arm64
+          path: /home/runner/frida/frida-arm64.tar.gz
+
+      - name: Verify installation
+        run: |
+          frida --version
+          
